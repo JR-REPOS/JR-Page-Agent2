@@ -1,0 +1,8 @@
+{
+  "name": "Page Agent Everywhere",
+  "description": "Standalone userscript and interactive test environment for Page Agent assistant on any webpage.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

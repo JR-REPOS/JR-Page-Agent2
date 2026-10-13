@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page Agent Everywhere</title>
+    <meta name="description" content="Standalone userscript and interactive test environment for Page Agent assistant on any webpage." />
+    <meta property="og:title" content="Page Agent Everywhere" />
+    <meta property="og:description" content="Standalone userscript and interactive test environment for Page Agent assistant on any webpage." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238b5cf6'><path d='M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5 2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5'/></svg>" />
+    <style>
+      :root {
+        --bg-main: #0c0817;
+        --bg-card: #151024;
+        --bg-card-hover: #1c1530;
+        --border-color: #2e234a;
+        --accent: #8b5cf6;
+        --accent-hover: #7c3aed;
+        --accent-gradient: linear-gradient(135deg, #a78bfa 0%, #6366f1 100%);
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        background: #110c20 border-box;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.85rem 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(8px);
+      }
+      .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-left: 130px;
+      }
+      @media (max-width: 768px) {
+        .brand {
+          margin-left: 0;
+          margin-top: 42px;
+        }
+      }
+      .brand-icon {
+        width: 34px;
+        height: 34px;
+        background: var(--accent-gradient);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #fff;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+      }
+      .brand h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .version-badge {
+        font-size: 0.75rem;
+        background: rgba(139, 92, 246, 0.15);
+        color: #c4b5fd;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+      }
+      .nav-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border: 1px solid transparent;
+        text-decoration: none;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+        box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3);
+      }
+      .btn-primary:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+      }
+      .btn-outline {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+      }
+      .btn-outline:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent);
+      }
+      .btn-sm {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+      }
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem;
+        flex: 1;
+        width: 100%;
+      }
+      .hero-banner {
+        background: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 60%),
+                    linear-gradient(180deg, #18112a 0%, #120d22 100%);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-content {
+        max-width: 750px;
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        margin-bottom: 1.25rem;
+      }
+      .status-indicator {
+        width: 8px;
+        height: 8px;
+        background: #10b981;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #10b981;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.9); }
+      }
+      .hero-banner h2 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.03em;
+        line-height: 1.2;
+      }
+      .hero-banner p {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        margin-bottom: 1.75rem;
+      }
+      .hero-controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.75rem;
+      }
+      .section-title h3 {
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
+      .section-title span {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2.5rem;
+      }
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.5rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .card:hover {
+        border-color: rgba(139, 92, 246, 0.4);
+      }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+      }
+      .card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .card-badge {
+        font-size: 0.7rem;
+        background: #251c3d;
+        color: #d8b4fe;
+        border: 1px solid #4a3875;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+      }
+      .badge-green {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+      .badge-yellow {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border-color: rgba(245, 158, 11, 0.3);
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .form-group label {
+        display: block;
+        font-size: 0.825rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.4rem;
+      }
+      .form-control {
+        width: 100%;
+        padding: 0.6rem 0.75rem;
+        background: #1c1530;
+        border: 1px solid #3d2f5e;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.9rem;
+        transition: border-color 0.15s;
+      }
+      .form-control:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+      }
+      .todo-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .todo-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.6rem 0.75rem;
+        background: #1a142c;
+        border: 1px solid #332650;
+        border-radius: 8px;
+      }
+      .todo-item.completed span {
+        text-decoration: line-through;
+        color: var(--text-muted);
+      }
+      .todo-item-left {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .counter-display {
+        font-size: 2.5rem;
+        font-weight: 800;
+        text-align: center;
+        color: var(--accent);
+        margin: 1rem 0;
+      }
+      .counter-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+      }
+      .toast-notice {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #201738;
+        border: 1px solid var(--accent);
+        color: white;
+        padding: 0.75rem 1.25rem;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 99999;
+        font-size: 0.9rem;
+      }
+      pre.code-block {
+        background: #090611;
+        border: 1px solid #2c2049;
+        border-radius: 10px;
+        padding: 1rem;
+        color: #d1d5db;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.825rem;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+      footer {
+        border-top: 1px solid var(--border-color);
+        padding: 1.5rem 2rem;
+        background: #0f0a1c;
+        text-align: center;
+        font-size: 0.825rem;
+        color: var(--text-secondary);
+      }
+      .interactive-tip {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background: rgba(139, 92, 246, 0.08);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        font-size: 0.825rem;
+        color: #c4b5fd;
+      }
+      /* Recipe Card Styles */
+      .recipe-card {
+        background: #18122a;
+        border: 1px solid #3b2c5c;
+        border-radius: 10px;
+        padding: 1.1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.75rem;
+        transition: transform 0.15s, border-color 0.15s;
+      }
+      .recipe-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+      .recipe-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .recipe-desc {
+        font-size: 0.825rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+      .recipe-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+      }
+      /* Tester card styles */
+      .ping-result-box {
+        background: #0d091a;
+        border: 1px solid #2e234a;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-top: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+      }
+      .ping-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .capability-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        background: #1c1533;
+        border: 1px solid #3c2f5d;
+        color: #cbd5e1;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="brand">
+          <div class="brand-icon">PA</div>
+          <div>
+            <h1>Page Agent Everywhere</h1>
+          </div>
+          <span class="version-badge">v0.6.0</span>
+        </div>
+        <div class="nav-actions">
+          <button id="nav-toggle-agent" class="btn btn-outline" type="button">
+            🤖 Toggle Assistant
+          </button>
+          <button id="nav-open-settings" class="btn btn-outline" type="button">
+            ⚙ Settings & Presets
+          </button>
+          <a href="/page-agent.user.js" download="page-agent.user.js" class="btn btn-primary" id="download-userscript-btn">
+            ⬇ Download .user.js
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Banner -->
+      <section class="hero-banner">
+        <div class="hero-content">
+          <div class="status-pill">
+            <span class="status-indicator"></span>
+            Page Agent is active on this page
+          </div>
+          <h2>Autonomous Web Assistant Everywhere</h2>
+          <p>
+            This application bundles and serves the standalone <strong>Page Agent</strong> userscript with support for Gemini, OpenAI, DeepSeek, Groq, and local Ollama models.
+            Interact with the floating draggable Page Agent button to automate tasks, inspect pages, or execute recipes.
+          </p>
+          <div class="hero-controls">
+            <button id="hero-launch-btn" class="btn btn-primary" type="button">
+              ✨ Launch Page Agent
+            </button>
+            <button id="hero-settings-btn" class="btn btn-outline" type="button">
+              🛠 Configure Presets & Rules
+            </button>
+            <button id="copy-script-btn" class="btn btn-outline" type="button">
+              📋 Copy Userscript Code
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Connectivity & Environment Diagnostics -->
+      <div class="section-title">
+        <h3>Endpoint Diagnostics & Environment Inspector</h3>
+        <span>Verify your AI provider connectivity and browser userscript runtime</span>
+      </div>
+
+      <div class="grid">
+        <!-- Endpoint Connection Tester Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚡ Endpoint Latency & Health Tester</div>
+            <span class="card-badge" id="tester-status-badge">Ready to Ping</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Test round-trip latency and connectivity to your configured provider endpoint in real-time.
+          </p>
+
+          <div style="font-size: 0.825rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+            <div><span style="color: var(--text-secondary);">Target Base URL:</span> <code id="test-baseurl" style="color: #c4b5fd; word-break: break-all;">-</code></div>
+            <div><span style="color: var(--text-secondary);">Configured Model:</span> <code id="test-model" style="color: #c4b5fd;">-</code></div>
+            <div><span style="color: var(--text-secondary);">Transport Mode:</span> <span id="test-transport" class="capability-pill">Native</span></div>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <button id="btn-ping-endpoint" class="btn btn-primary btn-sm" type="button">
+              ⚡ Ping Endpoint Now
+            </button>
+            <button id="btn-sync-settings" class="btn btn-outline btn-sm" type="button">
+              🔄 Sync from Settings
+            </button>
+          </div>
+
+          <div id="ping-result" class="ping-result-box" style="display: none;">
+            <div class="ping-row">
+              <span style="font-weight: 600;">Response Status:</span>
+              <span id="ping-status-text" style="color: #34d399; font-weight: 700;">-</span>
+            </div>
+            <div class="ping-row">
+              <span style="font-weight: 600;">Roundtrip Latency:</span>
+              <span id="ping-latency-text" class="card-badge badge-green">- ms</span>
+            </div>
+            <div class="ping-row">
+              <span style="font-weight: 600;">Details:</span>
+              <span id="ping-details-text" style="color: var(--text-secondary); font-size: 0.8rem;">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Userscript Manager Inspector Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🧩 Userscript Manager Inspector</div>
+            <span class="card-badge badge-green" id="inspector-env-badge">Active</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Detects your installed userscript manager extension and validates storage and network permissions.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.825rem; margin-bottom: 1rem;">
+            <div><span style="color: var(--text-secondary);">Detected Manager:</span> <strong id="detected-manager" style="color: #f1f5f9; margin-left: 0.25rem;">Browser Dev Preview</strong></div>
+            <div><span style="color: var(--text-secondary);">Script Version:</span> <code style="color: #a78bfa;">v0.6.0</code></div>
+            <div><span style="color: var(--text-secondary);">Active Domain:</span> <code id="detected-domain" style="color: #a78bfa;">localhost</code></div>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem;">
+            <span class="capability-pill">✅ GM_getValue / setValue</span>
+            <span class="capability-pill">✅ GM_xmlhttpRequest</span>
+            <span class="capability-pill">✅ GM_setClipboard</span>
+            <span class="capability-pill">✅ Shadow DOM Isolation</span>
+          </div>
+
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">
+            Compatible with <a href="https://scriptcat.org/" target="_blank" style="color: #a78bfa;">ScriptCat</a>, <a href="https://www.tampermonkey.net/" target="_blank" style="color: #a78bfa;">Tampermonkey</a>, and <a href="https://violentmonkey.github.io/" target="_blank" style="color: #a78bfa;">Violentmonkey</a>.
+          </div>
+        </div>
+      </div>
+
+      <!-- Automation Prompt Recipes Gallery -->
+      <div class="section-title">
+        <h3>Interactive Prompt Recipes & Automation Gallery</h3>
+        <span>Click to test autonomous task routines with the Page Agent</span>
+      </div>
+
+      <div class="grid-3" style="margin-bottom: 2.5rem;">
+        <div class="recipe-card">
+          <div>
+            <div class="recipe-title">📝 Auto-Fill Contact Form</div>
+            <p class="recipe-desc">Instructs the agent to populate the sample form using the saved user persona and request technical support.</p>
+          </div>
+          <div class="recipe-actions">
+            <button class="btn btn-primary btn-sm btn-run-recipe" data-recipe="Fill out the sample contact form with the name 'Jordan Vance', email 'jordan@techcorp.io', category 'Technical Support', and a message asking for API assistance." type="button">🚀 Load into Agent</button>
+            <button class="btn btn-outline btn-sm btn-copy-recipe" data-recipe="Fill out the sample contact form with the name 'Jordan Vance', email 'jordan@techcorp.io', category 'Technical Support', and a message asking for API assistance." type="button">📋 Copy</button>
+          </div>
+        </div>
+
+        <div class="recipe-card">
+          <div>
+            <div class="recipe-title">✅ Batch Task Manager</div>
+            <p class="recipe-desc">Adds 2 new deployment tasks into the Task Manager and marks the first existing task as done.</p>
+          </div>
+          <div class="recipe-actions">
+            <button class="btn btn-primary btn-sm btn-run-recipe" data-recipe="In the Task Manager card, add a task called 'Test latency ping' and another task called 'Export diagnostics bundle', then check the box on 'Mount Page Agent userscript'." type="button">🚀 Load into Agent</button>
+            <button class="btn btn-outline btn-sm btn-copy-recipe" data-recipe="In the Task Manager card, add a task called 'Test latency ping' and another task called 'Export diagnostics bundle', then check the box on 'Mount Page Agent userscript'." type="button">📋 Copy</button>
+          </div>
+        </div>
+
+        <div class="recipe-card">
+          <div>
+            <div class="recipe-title">🔢 State & Counter Goal</div>
+            <p class="recipe-desc">Guides the agent to locate the State counter and click the Increase button until the display reaches 5.</p>
+          </div>
+          <div class="recipe-actions">
+            <button class="btn btn-primary btn-sm btn-run-recipe" data-recipe="Click the + Increase button on the State & Counter card 5 times so that the counter value displays 5." type="button">🚀 Load into Agent</button>
+            <button class="btn btn-outline btn-sm btn-copy-recipe" data-recipe="Click the + Increase button on the State & Counter card 5 times so that the counter value displays 5." type="button">📋 Copy</button>
+          </div>
+        </div>
+
+        <div class="recipe-card">
+          <div>
+            <div class="recipe-title">🔍 Webpage Element Audit</div>
+            <p class="recipe-desc">Asks the agent to observe and summarize the total number of inputs, buttons, and cards on the current webpage.</p>
+          </div>
+          <div class="recipe-actions">
+            <button class="btn btn-primary btn-sm btn-run-recipe" data-recipe="Scan the webpage and summarize all input fields, buttons, and cards in 3 bullet points." type="button">🚀 Load into Agent</button>
+            <button class="btn btn-outline btn-sm btn-copy-recipe" data-recipe="Scan the webpage and summarize all input fields, buttons, and cards in 3 bullet points." type="button">📋 Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Playground Section -->
+      <div class="section-title">
+        <h3>Interactive Agent Playground</h3>
+        <span>Target elements for testing Page Agent's DOM interaction</span>
+      </div>
+
+      <div class="grid">
+        <!-- Interactive Form Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📝 Sample Contact Form</div>
+            <span class="card-badge">Form Test</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Ask the agent: <em>"Fill out this contact form with sample data and submit it."</em>
+          </p>
+          <form id="sample-form">
+            <div class="form-group">
+              <label for="input-fullname">Full Name</label>
+              <input id="input-fullname" name="fullname" class="form-control" type="text" placeholder="e.g. Alex Morgan" />
+            </div>
+            <div class="form-group">
+              <label for="input-email">Email Address</label>
+              <input id="input-email" name="email" class="form-control" type="email" placeholder="e.g. alex@example.com" />
+            </div>
+            <div class="form-group">
+              <label for="select-topic">Subject Category</label>
+              <select id="select-topic" name="topic" class="form-control">
+                <option value="inquiry">General Inquiry</option>
+                <option value="support">Technical Support</option>
+                <option value="feedback">Feedback & Suggestions</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input-message">Message</label>
+              <textarea id="input-message" name="message" class="form-control" rows="3" placeholder="Write your message here..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+              Submit Message
+            </button>
+          </form>
+          <div id="form-feedback" class="interactive-tip" style="display: none;"></div>
+        </div>
+
+        <!-- Task & Todo List Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">✅ Task Manager</div>
+            <span class="card-badge">List Test</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Ask the agent: <em>"Add a task 'Review PR #42' and mark 'Verify migration' as done."</em>
+          </p>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input id="new-task-input" class="form-control" type="text" placeholder="Add a new task..." />
+            <button id="add-task-btn" class="btn btn-outline" type="button">Add</button>
+          </div>
+          <ul class="todo-list" id="task-list">
+            <li class="todo-item">
+              <div class="todo-item-left">
+                <input type="checkbox" id="task-1" />
+                <span>Mount Page Agent userscript</span>
+              </div>
+              <button class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" data-del="1">✕</button>
+            </li>
+            <li class="todo-item completed">
+              <div class="todo-item-left">
+                <input type="checkbox" id="task-2" checked />
+                <span>Verify migration & dev server port 3000</span>
+              </div>
+              <button class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" data-del="2">✕</button>
+            </li>
+            <li class="todo-item">
+              <div class="todo-item-left">
+                <input type="checkbox" id="task-3" />
+                <span>Test floating agent panel and settings</span>
+              </div>
+              <button class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" data-del="3">✕</button>
+            </li>
+          </ul>
+          <div class="interactive-tip">
+            💡 Tip: Tasks are interactive. Check boxes or click ✕ to delete.
+          </div>
+        </div>
+
+        <!-- Interactive Counter & Calculator Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔢 State & Counter</div>
+            <span class="card-badge">Button Test</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Ask the agent: <em>"Increment the counter to 5."</em>
+          </p>
+          <div class="counter-display" id="counter-val">0</div>
+          <div class="counter-buttons">
+            <button id="counter-dec" class="btn btn-outline" type="button">- Decrease</button>
+            <button id="counter-reset" class="btn btn-outline" type="button">Reset</button>
+            <button id="counter-inc" class="btn btn-primary" type="button">+ Increase</button>
+          </div>
+          <div style="margin-top: 1.5rem;">
+            <label style="font-size: 0.825rem; font-weight: 600; color: var(--text-secondary);">Quick Filter Search:</label>
+            <input id="playground-search" class="form-control" style="margin-top: 0.35rem;" type="text" placeholder="Type to filter data..." />
+            <p id="search-status" style="font-size: 0.8rem; color: #a78bfa; margin-top: 0.5rem;"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Userscript Installation, Distribution & Diagnostics -->
+      <div class="section-title">
+        <h3>Userscript Distribution & Real-time Diagnostics</h3>
+        <span>Install the userscript or export comprehensive session diagnostics</span>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📦 Install in Browser Extension</div>
+            <span class="card-badge">Distribution</span>
+          </div>
+          <ol style="margin-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.8;">
+            <li>Install a userscript manager: <strong>ScriptCat</strong>, <strong>Tampermonkey</strong>, or <strong>Violentmonkey</strong>.</li>
+            <li>Click <strong>Download .user.js</strong> or copy the userscript code.</li>
+            <li>Open your extension's dashboard and import or paste the script.</li>
+            <li>Use the new <strong>Quick Presets</strong> for Gemini, OpenAI, DeepSeek, or Ollama.</li>
+          </ol>
+          <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="/page-agent.user.js" download="page-agent.user.js" class="btn btn-primary">
+              Download page-agent.user.js
+            </a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 Diagnostics & Bug Report Export</div>
+            <span class="card-badge">Live Diagnostics</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Export recorded request logs, telemetry, and environment runtime state for debugging.
+          </p>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            <button id="btn-export-json" class="btn btn-outline" type="button">
+              📥 Export JSON Snapshot
+            </button>
+            <button id="btn-export-github" class="btn btn-outline" type="button">
+              📋 Copy GitHub Issue Report
+            </button>
+          </div>
+          <div class="interactive-tip" id="diag-summary-tip">
+            Logs recorded: <strong id="diag-count">0</strong> entries. Zero secrets or API keys are ever stored or written to logs.
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="toast" class="toast-notice">
+      <span id="toast-msg">Action performed</span>
+    </div>
+
+    <footer>
+      Page Agent Everywhere • Built with page-agent and Vite • Running on port 3000
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "page-agent-userscript",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build:userscript": "vite build --config vite.userscript.config.ts",
+    "build": "tsc -p tsconfig.app.json && vite build --config vite.userscript.config.ts && vite build",
+    "watch": "vite build --watch",
+    "lint": "eslint .",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "page-agent": "^1.5.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^24.12.0",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "vite": "^8.0.0"
+  }
+}
